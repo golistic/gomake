@@ -130,7 +130,7 @@ func main() {
 	targetDockerBuildXPush.PreTargets = []*gomake.Target{&targetVendor}
 	targetDockerBuildXPush.DeferredTargets = []*gomake.Target{&targetCleanupVendor}
 
-	gomake.RegisterTargets(&gomake.TargetDockerBuildXPush)
+	gomake.RegisterTargets(&targetDockerBuildXPush)
 	gomake.Make()
 }
 ```
