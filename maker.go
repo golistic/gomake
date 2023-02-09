@@ -79,7 +79,7 @@ func (m *Maker) runTarget(target *Target) int {
 	target.Maker = m
 	if target.HandleFlags != nil {
 		if _, err := target.HandleFlags(target); err != nil {
-			m.PrintError(err)
+			m.PrintlnError(err)
 			return 0
 		}
 	}
@@ -97,7 +97,7 @@ func (m *Maker) runTarget(target *Target) int {
 	}
 
 	if err := target.Do(target); err != nil {
-		m.PrintError(err)
+		m.PrintlnError(err)
 		return 1
 	}
 	for _, msg := range target.PostMessages {
@@ -112,7 +112,7 @@ func (m *Maker) PrintfError(format string, a ...any) {
 }
 
 func (m *Maker) PrintError(a ...any) {
-	_, _ = fmt.Fprint(m.StdErr, append([]any{"Error:"}, a...)...)
+	_, _ = fmt.Fprint(m.StdErr, append([]any{"Error: "}, a...)...)
 }
 
 func (m *Maker) PrintlnError(a ...any) {
