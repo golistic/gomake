@@ -63,6 +63,10 @@ var TargetDockerBuild = Target{
 		cmd := exec.Command("docker", execArgs...)
 		cmd.Stdout = target.Maker.StdOut
 		cmd.Stderr = target.Maker.StdErr
+		if target.WorkDir != "" {
+			fmt.Println("executing in directory:", target.WorkDir)
+			cmd.Dir = target.WorkDir
+		}
 		if err := cmd.Run(); err != nil {
 			return err
 		}
@@ -128,6 +132,8 @@ var TargetDockerBuildXPush = Target{
 			target.Flags["platform"] = platform
 		}
 
+		fmt.Println("### flags", target.Flags)
+
 		return flagSet, nil
 	},
 	Do: func(target *Target) error {
@@ -146,6 +152,10 @@ var TargetDockerBuildXPush = Target{
 		cmd := exec.Command("docker", execArgs...)
 		cmd.Stdout = target.Maker.StdOut
 		cmd.Stderr = target.Maker.StdErr
+		if target.WorkDir != "" {
+			fmt.Println("executing in directory:", target.WorkDir)
+			cmd.Dir = target.WorkDir
+		}
 		if err := cmd.Run(); err != nil {
 			return err
 		}

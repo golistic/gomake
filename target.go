@@ -18,4 +18,5 @@ type Target struct {
 	DeferredTargets []*Target
 	PreTargets      []*Target
 	Do              func(*Target) error
+	WorkDir         string
 }

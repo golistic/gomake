@@ -59,8 +59,8 @@ var TargetVendor = Target{
 
 var TargetCleanupVendor = Target{
 	Name:         "clean-vendor",
-	PreMessages:  []string{"removing vendor folder..."},
-	PostMessages: []string{"done removing vendor folder."},
+	PreMessages:  []string{"removing vendor folder"},
+	PostMessages: []string{"done removing vendor folder"},
 	HandleFlags:  targetVendorHandleFlags,
 	Do: func(target *Target) error {
 		if _, err := target.HandleFlags(target); err != nil {
