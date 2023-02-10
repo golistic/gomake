@@ -80,13 +80,19 @@ func (m *Maker) runTarget(target *Target) int {
 	if target.HandleFlags != nil {
 		if _, err := target.HandleFlags(target); err != nil {
 			m.PrintlnError(err)
-			return 0
+			return 1
 		}
 	}
 
 	for _, msg := range target.PreMessages {
 		m.Println(m.msgPrefix, msg)
 	}
+
+	defer func() {
+		for _, msg := range target.PostMessages {
+			m.Println(m.msgPrefix, msg)
+		}
+	}()
 
 	defer func() {
 		m.run(target.DeferredTargets...)
@@ -99,9 +105,6 @@ func (m *Maker) runTarget(target *Target) int {
 	if err := target.Do(target); err != nil {
 		m.PrintlnError(err)
 		return 1
-	}
-	for _, msg := range target.PostMessages {
-		m.Println(m.msgPrefix, msg)
 	}
 
 	return 0
