@@ -1,2 +1,6 @@
+github.com/golistic/shieldbadger v0.0.0-20230223210348-5649a4ba6aa9 h1:NBSzSvgVJjhI37ytLLcHLkRA7UTR/P1L/0dm6EY4GoE=
+github.com/golistic/shieldbadger v0.0.0-20230223210348-5649a4ba6aa9/go.mod h1:9Ad43QCHXG87MxOV2rB668vLcEV/lC4qJZhs+VdEXJQ=
 github.com/golistic/xt v1.0.1 h1:prcwpL757GEu+dj6x2v6vxHkulkFdyQ3S1PqO+6ohPM=
 github.com/golistic/xt v1.0.1/go.mod h1:j1ZuWefyOD4HegoapgSjbXanA7X9YOKUeEB5gsEPgYg=
+golang.org/x/mod v0.8.0 h1:LUYupSeNrTNCGzR/hVBk2NHZO4hXcVaW1k4Qx7rjPx8=
+golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
