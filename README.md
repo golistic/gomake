@@ -3,6 +3,12 @@ gomake - A GNU Make (Makefile) kinda thing in Go
 
 Copyright (c) 2023, Geert JM Vanderkelen
 
+<div>
+  <img alt="Go: 1.19" src="_badges/go-version.svg">
+  <a href="https://goreportcard.com/report/github.com/golistic/gomake"><img alt="Go Report: A+" src="_badges/go-report.svg"></a>
+  <img alt="license: MIT" src="_badges/license.svg">
+</div>
+
 The `gomake` package offers functionality to create a Makefile-like application
 written in Go. Since running `make` depends on tools that needs to be installed
 additionally, and `go` is always available, why  not just

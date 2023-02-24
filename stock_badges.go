@@ -29,7 +29,7 @@ var TargetBadges = Target{
 			destFolder string
 		)
 
-		flagSet.StringVar(&configFile, "config", filepath.Join("_badges", "badge.json"),
+		flagSet.StringVar(&configFile, "config", filepath.Join("_badges", "badges.json"),
 			"Configuration file containing which badges to generate")
 		flagSet.StringVar(&destFolder, "dest", "_badges/",
 			"Folder in which fetched badges will be stored")
