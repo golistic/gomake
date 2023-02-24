@@ -132,8 +132,6 @@ var TargetDockerBuildXPush = Target{
 			target.Flags["platform"] = platform
 		}
 
-		fmt.Println("### flags", target.Flags)
-
 		return flagSet, nil
 	},
 	Do: func(target *Target) error {

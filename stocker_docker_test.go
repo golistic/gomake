@@ -35,8 +35,6 @@ func TestTargetDockerBuild(t *testing.T) {
 		dataOut := bufOut.String()
 		dataErr := bufErr.String()
 
-		fmt.Println("###", dataOut)
-
 		xt.Eq(t, 1, exit)
 		xt.Assert(t, strings.Contains(dataOut, target.PreMessages[0]))
 		xt.Assert(t, strings.Contains(dataOut, target.PostMessages[0]))
