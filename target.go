@@ -10,6 +10,7 @@ type Target struct {
 	Maker *Maker
 
 	Name            string
+	Description     string
 	FlagArgs        []string
 	Flags           map[string]any
 	HandleFlags     func(target *Target) (*flag.FlagSet, error)
