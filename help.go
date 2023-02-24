@@ -14,7 +14,11 @@ func helpAvailableTargets(m *Maker) string {
 
 	sort.Strings(names)
 	for _, name := range names {
+		target := m.targetRegistry[name]
 		help += "   " + name + "\n"
+		if target.Description != "" {
+			help += "      " + target.Description + "\n"
+		}
 	}
 	return help
 }
