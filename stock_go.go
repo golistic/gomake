@@ -100,3 +100,38 @@ var TargetGoVersion = Target{
 		return nil
 	},
 }
+
+// TargetGoLint runs golangci-lint executing lots of linters against the project's source code
+var TargetGoLint = Target{
+	Name:         "go-lint",
+	Description:  "Uses github.com/golangci/golangci-lint to run various linters.",
+	PreMessages:  []string{"running golangci-lint"},
+	PostMessages: []string{"done running golangci-lint"},
+	Do: func(target *Target) error {
+		var bufOut strings.Builder
+		var bufErr strings.Builder
+
+		cmd := exec.Command("golangci-lint", "run", "--color", "always", "./...")
+		cmd.Stdout = &bufOut
+		cmd.Stderr = &bufErr
+
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+
+		err := cmd.Wait()
+		if err != nil {
+			switch err.(type) {
+			case *exec.ExitError:
+				fmt.Println(bufOut.String())
+				fmt.Println(bufErr.String())
+				return nil
+			default:
+				return err
+			}
+		}
+
+		target.Maker.Println("Congrats! Looking good!")
+		return nil
+	},
+}
