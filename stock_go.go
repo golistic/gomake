@@ -135,24 +135,3 @@ var TargetGoLint = Target{
 		return nil
 	},
 }
-
-// TargetGoReportCard runs goreportcard-cli, printing a report card with a grade.
-var TargetGoReportCard = Target{
-	Name:         "go-reportcard",
-	Description:  "Runs goreportcard-cli reporting quality of the source code together with a grade.",
-	PreMessages:  []string{"running goreportcard-cli"},
-	PostMessages: []string{"done running goreportcard-cli"},
-	Do: func(target *Target) error {
-		var buf strings.Builder
-
-		cmd := exec.Command("goreportcard-cli")
-		cmd.Stdout = &buf
-		cmd.Stderr = &buf
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-
-		target.Maker.Println(strings.TrimSpace(buf.String()))
-		return nil
-	},
-}

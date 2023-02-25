@@ -5,7 +5,6 @@ Copyright (c) 2023, Geert JM Vanderkelen
 
 <div>
   <img alt="Go: 1.19" src="_badges/go-version.svg">
-  <a href="https://goreportcard.com/report/github.com/golistic/gomake"><img alt="Go Report: A+" src="_badges/go-report.svg"></a>
   <img alt="license: MIT" src="_badges/license.svg">
 </div>
 
