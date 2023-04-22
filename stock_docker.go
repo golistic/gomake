@@ -24,15 +24,22 @@ var TargetDockerBuild = Target{
 		}
 
 		var (
-			image string
-			tag   string
+			registry string
+			image    string
+			tag      string
 		)
 
+		flagSet.StringVar(&registry, "registry", "",
+			"Docker registry to be used when naming the image")
 		flagSet.StringVar(&image, "image", "", "Docker image name")
 		flagSet.StringVar(&tag, "tag", "", "Docker Image tag (usually version)")
 
 		if err := flagSet.Parse(target.FlagArgs); err != nil {
 			return nil, err
+		}
+
+		if v, ok := target.Flags["registry"]; !ok || v == "" {
+			fmt.Println("Note: registry not set, default docker.io/library will be used.")
 		}
 
 		if v, ok := target.Flags["image"]; !ok || v == "" {
@@ -57,6 +64,14 @@ var TargetDockerBuild = Target{
 		}
 
 		tag := fmt.Sprintf("%s:%s", target.Flags["image"].(string), target.Flags["tag"].(string))
+
+		if r, ok := target.Flags["registry"]; ok {
+			var err error
+			tag, err = url.JoinPath(r.(string), tag)
+			if err != nil {
+				return fmt.Errorf("failed creating tag using registry (%w)", err)
+			}
+		}
 
 		execArgs := []string{"build", "--tag", tag, "."}
 
