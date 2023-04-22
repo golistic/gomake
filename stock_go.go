@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"regexp"
 	"strings"
 )
 
@@ -134,4 +136,161 @@ var TargetGoLint = Target{
 		target.Maker.Println("Congrats! Looking good!")
 		return nil
 	},
+}
+
+// TargetGoCoverage runs Go tests and retrieves the coverage report.
+var TargetGoCoverage = Target{
+	Name:         "go-coverage",
+	Description:  "Runs both unittests and integration tests to calculate coverage.",
+	PreMessages:  []string{"running go coverage"},
+	PostMessages: []string{"done running coverage"},
+	Settings: map[string]any{
+		"integration": [][]string{
+			// cannot at go-coverage (would recursively run)
+			{"go", "run", "-cover", "./cmd/make", "go-version"},
+			{"go", "run", "-cover", "./cmd/make", "badges"},
+			{"go", "run", "-cover", "./cmd/make", "go-lint"},
+		},
+	},
+	HandleFlags: func(target *Target) (*flag.FlagSet, error) {
+		flagSet := flag.NewFlagSet(target.Name, flag.ExitOnError)
+		if target.Flags == nil {
+			target.Flags = map[string]any{}
+		}
+
+		var coverdir string
+
+		flagSet.StringVar(&coverdir, "coverdir", "",
+			"Where to store coverage profiles (default: create a system temporary directory)")
+
+		if err := flagSet.Parse(target.FlagArgs); err != nil {
+			return nil, err
+		}
+
+		if v, ok := target.Flags["coverdir"]; !ok || v == "" {
+			target.Flags["coverdir"] = coverdir
+		}
+
+		return flagSet, nil
+	},
+	Do: func(target *Target) error {
+		coverDir, _ := target.Flags["coverdir"].(string) // when missing/incorrect, we use temporary
+		integration, ok := target.Settings["integration"].([][]string)
+		if !ok {
+			return fmt.Errorf("integration setting not slice of string slices")
+		}
+
+		result, err := combinedCoverage(target.Maker, coverDir, integration)
+		if err != nil {
+			return err
+		}
+
+		target.Maker.Println("Total Coverage:", result)
+		return nil
+	},
+}
+
+func combinedCoverage(maker *Maker, coverDir string, integration [][]string) (string, error) {
+	var bufErr strings.Builder
+
+	if strings.TrimSpace(coverDir) == "" {
+		var err error
+		coverDir, err = os.MkdirTemp("", "gomake-go-coverage")
+		if err != nil {
+			return "", err
+		}
+		defer func() { _ = os.RemoveAll(coverDir) }()
+	} else {
+		if err := os.Mkdir(coverDir, 0770); err != nil {
+			switch {
+			case os.IsExist(err):
+				fmt.Println("Coverage output directory exists; you are responsible to clean it up before and after")
+			case err != nil:
+				return "", err
+			}
+		}
+	}
+
+	fmt.Println("Coverage profiles stored in", coverDir)
+
+	dirUnit := path.Join(coverDir, "unittests")
+	if err := os.Mkdir(dirUnit, 0700); err != nil {
+		return "", err
+	}
+	dirIntegration := path.Join(coverDir, "integration")
+	if err := os.Mkdir(dirIntegration, 0700); err != nil {
+		return "", err
+	}
+
+	env := os.Environ()
+	env = append(env, "GOCOVERDIR="+dirIntegration)
+
+	maker.Println("Coverage using unittests")
+	cmd := []string{"go", "test", "-cover", "./...",
+		"-args", fmt.Sprintf("-test.gocoverdir=%s", dirUnit)}
+	if err := execCmd(nil, &bufErr, nil, cmd...); err != nil {
+		switch err.(type) {
+		case *exec.ExitError:
+			fmt.Println(bufErr.String())
+			return "", nil
+		default:
+			return "", err
+		}
+	}
+
+	if len(integration) > 0 {
+		maker.Println("Coverage using integration")
+	}
+
+	for _, cmdAndArgs := range integration {
+		fmt.Println("  Running:", strings.Join(cmdAndArgs, " "))
+		var bufErr strings.Builder
+		if err := execCmd(nil, &bufErr, env, cmdAndArgs...); err != nil {
+			switch err.(type) {
+			case *exec.ExitError:
+				fmt.Println(bufErr.String())
+				return "", nil
+			default:
+				return "", err
+			}
+		}
+	}
+
+	bufOut := strings.Builder{}
+	cmdAndArgs := []string{
+		"go", "tool", "covdata", "textfmt",
+		"-i", dirIntegration + "," + dirUnit,
+		"-o", path.Join(coverDir, "profile"),
+	}
+	if err := execCmd(&bufOut, &bufErr, nil, cmdAndArgs...); err != nil {
+		switch err.(type) {
+		case *exec.ExitError:
+			fmt.Println(bufErr.String())
+			return "", nil
+		default:
+			return "", err
+		}
+	}
+
+	bufOut = strings.Builder{}
+	cmdAndArgs = []string{
+		"go", "tool", "cover", "-func", path.Join(coverDir, "profile"),
+	}
+	if err := execCmd(&bufOut, &bufErr, nil, cmdAndArgs...); err != nil {
+		switch err.(type) {
+		case *exec.ExitError:
+			fmt.Println(bufErr.String())
+			return "", nil
+		default:
+			return "", err
+		}
+	}
+
+	reTotal := regexp.MustCompile(`total:\s+\(\w+\)\s+(.+?)%\n`)
+	m := reTotal.FindStringSubmatch(bufOut.String())
+	if m == nil {
+		return "", fmt.Errorf("parsing output of Go cover tool (getting total)")
+	}
+
+	return m[1], nil
 }

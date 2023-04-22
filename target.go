@@ -20,4 +20,5 @@ type Target struct {
 	PreTargets      []*Target
 	Do              func(*Target) error
 	WorkDir         string
+	Settings        map[string]any
 }
