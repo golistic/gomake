@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os/exec"
+	"strings"
 )
 
 var TargetDockerBuild = Target{
@@ -42,9 +43,8 @@ var TargetDockerBuild = Target{
 
 		if registry != "" {
 			// command line flag override default
-
 			if registry == "docker.io" || registry == "local" {
-				registry = ""
+				registry = "docker.io"
 			}
 
 			target.Flags["registry"] = registry
@@ -54,7 +54,12 @@ var TargetDockerBuild = Target{
 			fmt.Println("Note: registry not set, default docker.io/library will be used.")
 		}
 
-		if image != "" {
+		if target.Flags["registry"] == "docker.io" {
+			// correct image name (checked later when empty)
+			if image, ok := target.Flags["image"].(string); ok && image != "" {
+				target.Flags["image"] = "library/" + image[strings.LastIndex(image, "/")+1:]
+			}
+		} else if image != "" {
 			// command line flag override default
 			target.Flags["image"] = image
 		}
@@ -94,15 +99,7 @@ var TargetDockerBuild = Target{
 		}
 
 		execArgs := []string{"build", "--tag", tag, "."}
-
-		cmd := exec.Command("docker", execArgs...)
-		cmd.Stdout = target.Maker.StdOut
-		cmd.Stderr = target.Maker.StdErr
-		if target.WorkDir != "" {
-			fmt.Println("executing in directory:", target.WorkDir)
-			cmd.Dir = target.WorkDir
-		}
-		if err := cmd.Run(); err != nil {
+		if err := execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir); err != nil {
 			return err
 		}
 
