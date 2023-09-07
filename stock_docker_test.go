@@ -99,7 +99,8 @@ func TestTargetDockerBuildX(t *testing.T) {
 		xt.Eq(t, 1, exit)
 
 		xt.Assert(t, strings.Contains(dataOut, target.PreMessages[0]))
-		xt.Assert(t, strings.Contains(dataErr, "RUN exit 1 # we want `docker build` to fail"))
+		xt.Assert(t, strings.Contains(dataErr, "RUN exit 1 # we want `docker build` to fail"),
+			"got: "+dataErr)
 	})
 
 	t.Run("required flags", func(t *testing.T) {

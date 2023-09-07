@@ -5,6 +5,8 @@ package gomake
 import (
 	"flag"
 	"fmt"
+	"io"
+	"math/rand"
 	"net/url"
 	"os/exec"
 )
@@ -166,23 +168,50 @@ var TargetDockerBuildXPush = Target{
 			return fmt.Errorf("failed creating tag using registry (%w)", err)
 		}
 
+		builderName := fmt.Sprintf("gomake-tempoary-%d", rand.Int())
+		// create a builder
 		execArgs := []string{
+			"buildx", "create",
+			"--name", builderName,
+			"--driver", "docker-container",
+			"--use",
+		}
+		if err := execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir); err != nil {
+			return err
+		}
+
+		defer func() {
+			execArgs := []string{
+				"buildx", "rm", "-f", builderName,
+			}
+			_ = execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir)
+		}()
+
+		execArgs = []string{
 			"buildx", "build",
+			"--builder", builderName,
 			"--platform", target.Flags["platform"].(string),
 			"--tag", fullTag, "--push", ".",
 		}
-
-		cmd := exec.Command("docker", execArgs...)
-		cmd.Stdout = target.Maker.StdOut
-		cmd.Stderr = target.Maker.StdErr
-		if target.WorkDir != "" {
-			fmt.Println("executing in directory:", target.WorkDir)
-			cmd.Dir = target.WorkDir
-		}
-		if err := cmd.Run(); err != nil {
+		if err := execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir); err != nil {
 			return err
 		}
 
 		return nil
 	},
+}
+
+func execDocker(stdOut, stdErr io.Writer, args []string, workDir string) error {
+	cmd := exec.Command("docker", args...)
+	cmd.Stdout = stdOut
+	cmd.Stderr = stdErr
+	if workDir != "" {
+		fmt.Println("executing in directory:", workDir)
+		cmd.Dir = workDir
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
