@@ -8,7 +8,6 @@ import (
 	"io"
 	"math/rand"
 	"net/url"
-	"os"
 	"os/exec"
 )
 
@@ -93,10 +92,6 @@ var TargetDockerBuild = Target{
 				return fmt.Errorf("failed creating tag using registry (%w)", err)
 			}
 		}
-
-		fmt.Println("###", target.Flags)
-		fmt.Println("###", tag)
-		os.Exit(1)
 
 		execArgs := []string{"build", "--tag", tag, "."}
 
