@@ -38,6 +38,16 @@ var TargetDockerBuild = Target{
 			return nil, err
 		}
 
+		if registry != "" {
+			// command line flag override default
+
+			if registry == "docker.io" || registry == "local" {
+				registry = "docker.io/library"
+			}
+
+			target.Flags["registry"] = registry
+		}
+
 		if v, ok := target.Flags["registry"]; !ok || v == "" {
 			fmt.Println("Note: registry not set, default docker.io/library will be used.")
 		}
