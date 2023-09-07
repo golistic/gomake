@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"net/url"
+	"os"
 	"os/exec"
 )
 
@@ -44,7 +45,7 @@ var TargetDockerBuild = Target{
 			// command line flag override default
 
 			if registry == "docker.io" || registry == "local" {
-				registry = "docker.io/library"
+				registry = ""
 			}
 
 			target.Flags["registry"] = registry
@@ -54,18 +55,26 @@ var TargetDockerBuild = Target{
 			fmt.Println("Note: registry not set, default docker.io/library will be used.")
 		}
 
+		if image != "" {
+			// command line flag override default
+			target.Flags["image"] = image
+		}
+
 		if v, ok := target.Flags["image"]; !ok || v == "" {
 			if image == "" {
 				return nil, fmt.Errorf("%s: flag -image is required", target.Name)
 			}
-			target.Flags["image"] = image
+		}
+
+		if tag != "" {
+			// command line flag override default
+			target.Flags["tag"] = tag
 		}
 
 		if v, ok := target.Flags["tag"]; !ok || v == "" {
 			if tag == "" {
 				return nil, fmt.Errorf("%s: flag -tag is required", target.Name)
 			}
-			target.Flags["tag"] = tag
 		}
 
 		return flagSet, nil
@@ -84,6 +93,10 @@ var TargetDockerBuild = Target{
 				return fmt.Errorf("failed creating tag using registry (%w)", err)
 			}
 		}
+
+		fmt.Println("###", target.Flags)
+		fmt.Println("###", tag)
+		os.Exit(1)
 
 		execArgs := []string{"build", "--tag", tag, "."}
 
