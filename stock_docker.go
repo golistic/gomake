@@ -27,15 +27,19 @@ var TargetDockerBuild = Target{
 		}
 
 		var (
-			registry string
-			image    string
-			tag      string
+			registry   string
+			image      string
+			tag        string
+			dockerFile string
+			noCache    bool
 		)
 
 		flagSet.StringVar(&registry, "registry", "",
 			"Docker registry to be used when naming the image")
 		flagSet.StringVar(&image, "image", "", "Docker image name")
 		flagSet.StringVar(&tag, "tag", "", "Docker Image tag (usually version)")
+		flagSet.StringVar(&dockerFile, "f", "", `Name of the Dockerfile (default: "PATH/Dockerfile")`)
+		flagSet.BoolVar(&noCache, "no-cache", false, "Do not use cache when building the Docker image")
 
 		if err := flagSet.Parse(target.FlagArgs); err != nil {
 			return nil, err
@@ -81,6 +85,14 @@ var TargetDockerBuild = Target{
 			}
 		}
 
+		if v, ok := target.Flags["dockerFile"]; !ok || v == "" {
+			target.Flags["dockerFile"] = dockerFile
+		}
+
+		if _, ok := target.Flags["noCache"]; !ok {
+			target.Flags["noCache"] = noCache
+		}
+
 		return flagSet, nil
 	},
 	Do: func(target *Target) error {
@@ -99,6 +111,15 @@ var TargetDockerBuild = Target{
 		}
 
 		execArgs := []string{"build", "--tag", tag, "."}
+
+		if v, ok := target.Flags["dockerFile"].(string); ok && v != "" {
+			execArgs = append(execArgs, "-f", v)
+		}
+
+		if v, ok := target.Flags["noCache"].(bool); ok && v {
+			execArgs = append(execArgs, "--no-cache")
+		}
+
 		if err := execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir); err != nil {
 			return err
 		}
@@ -122,10 +143,12 @@ var TargetDockerBuildXPush = Target{
 		}
 
 		var (
-			registry string
-			image    string
-			tag      string
-			platform string
+			registry   string
+			image      string
+			tag        string
+			platform   string
+			dockerFile string
+			noCache    bool
 		)
 
 		flagSet.StringVar(&registry, "registry", "",
@@ -134,6 +157,8 @@ var TargetDockerBuildXPush = Target{
 		flagSet.StringVar(&tag, "tag", "", "Docker image tag (usually version)")
 		flagSet.StringVar(&platform, "platform", "linux/arm64,linux/amd64",
 			"Platforms to build for (comma separated)")
+		flagSet.StringVar(&dockerFile, "f", "", `Name of the Dockerfile (default: "PATH/Dockerfile")`)
+		flagSet.BoolVar(&noCache, "no-cache", false, "Do not use cache when building the Docker image")
 
 		if err := flagSet.Parse(target.FlagArgs); err != nil {
 			return nil, err
@@ -164,9 +189,18 @@ var TargetDockerBuildXPush = Target{
 			target.Flags["platform"] = platform
 		}
 
+		if v, ok := target.Flags["dockerFile"]; !ok || v == "" {
+			target.Flags["dockerFile"] = dockerFile
+		}
+
+		if _, ok := target.Flags["noCache"]; !ok {
+			target.Flags["noCache"] = noCache
+		}
+
 		return flagSet, nil
 	},
 	Do: func(target *Target) error {
+
 		tag := fmt.Sprintf("%s:%s", target.Flags["image"].(string), target.Flags["tag"].(string))
 		fullTag, err := url.JoinPath(target.Flags["registry"].(string), tag)
 		if err != nil {
@@ -174,6 +208,7 @@ var TargetDockerBuildXPush = Target{
 		}
 
 		builderName := fmt.Sprintf("gomake-tempoary-%d", rand.Int())
+
 		// create a builder
 		execArgs := []string{
 			"buildx", "create",
@@ -181,6 +216,7 @@ var TargetDockerBuildXPush = Target{
 			"--driver", "docker-container",
 			"--use",
 		}
+
 		if err := execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir); err != nil {
 			return err
 		}
@@ -196,8 +232,19 @@ var TargetDockerBuildXPush = Target{
 			"buildx", "build",
 			"--builder", builderName,
 			"--platform", target.Flags["platform"].(string),
-			"--tag", fullTag, "--push", ".",
+			"--tag", fullTag,
 		}
+
+		if v, ok := target.Flags["dockerFile"].(string); ok && v != "" {
+			execArgs = append(execArgs, "-f", v)
+		}
+
+		if v, ok := target.Flags["noCache"].(bool); ok && v {
+			execArgs = append(execArgs, "--no-cache")
+		}
+
+		execArgs = append(execArgs, "--push", ".")
+
 		if err := execDocker(target.Maker.StdOut, target.Maker.StdErr, execArgs, target.WorkDir); err != nil {
 			return err
 		}
